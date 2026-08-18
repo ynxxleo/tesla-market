@@ -200,6 +200,7 @@ class TradingFlowTest extends TestCase
     public function test_landing_page_has_video_team_and_facebook(): void
     {
         $this->get('/')->assertOk()->assertSee('_OiEwIUQzDk')->assertSee('MEET THE TEAM')->assertSee('Facebook');
+        $this->get('/')->assertOk()->assertSee('Elon Musk')->assertSee('Wikimedia Commons')->assertSee('not endorsed by or affiliated with');
     }
 
     public function test_admin_can_lock_account(): void
