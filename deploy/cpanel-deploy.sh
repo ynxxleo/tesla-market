@@ -10,15 +10,19 @@ if ! command -v php >/dev/null 2>&1; then
 fi
 
 if command -v composer >/dev/null 2>&1; then
-    COMPOSER_BIN="$(command -v composer)"
+    COMPOSER_COMMAND=("$(command -v composer)")
 elif [ -x /opt/cpanel/composer/bin/composer ]; then
-    COMPOSER_BIN=/opt/cpanel/composer/bin/composer
+    COMPOSER_COMMAND=(/opt/cpanel/composer/bin/composer)
+elif [ -f "$HOME/composer.phar" ]; then
+    COMPOSER_COMMAND=(php "$HOME/composer.phar")
+elif [ -f composer.phar ]; then
+    COMPOSER_COMMAND=(php composer.phar)
 else
     echo "Deployment failed: Composer is not available in the cPanel terminal."
     exit 1
 fi
 
-"$COMPOSER_BIN" install \
+"${COMPOSER_COMMAND[@]}" install \
     --no-dev \
     --prefer-dist \
     --no-interaction \

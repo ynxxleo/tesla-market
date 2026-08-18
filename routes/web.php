@@ -1,18 +1,72 @@
 <?php
-use App\Http\Controllers\{AdminComplianceController,AdminController,AssistantController,AuthController,DashboardController,FundingController,InvestmentController,KycController,NewsController,ProfileController,TradeController};
+
+use App\Http\Controllers\AdminComplianceController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AssistantController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FundingController;
+use App\Http\Controllers\InvestmentController;
+use App\Http\Controllers\KycController;
+use App\Http\Controllers\NewsController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TradeController;
 use Illuminate\Support\Facades\Route;
-Route::view('/','welcome')->name('home');
-Route::get('/news',NewsController::class)->name('news');
-Route::view('/about','pages.content',['page'=>'about'])->name('about');
-Route::view('/contact','pages.content',['page'=>'contact'])->name('contact');
-Route::view('/help','pages.content',['page'=>'help'])->name('help');
-Route::view('/fees','pages.content',['page'=>'fees'])->name('fees');
-Route::view('/terms','pages.content',['page'=>'terms'])->name('terms');
-Route::view('/privacy','pages.content',['page'=>'privacy'])->name('privacy');
-Route::view('/legal','pages.content',['page'=>'legal'])->name('legal');
-Route::view('/risk-disclosure','pages.content',['page'=>'risk'])->name('risk');
-Route::view('/aml-policy','pages.content',['page'=>'aml'])->name('aml');
-Route::middleware('guest')->group(function(){Route::get('/login',[AuthController::class,'login'])->name('login');Route::post('/login',[AuthController::class,'authenticate'])->middleware('throttle:10,1');Route::get('/register',[AuthController::class,'register'])->name('register');Route::post('/register',[AuthController::class,'store'])->middleware('throttle:5,1');});
-Route::middleware('auth')->group(function(){Route::post('/logout',[AuthController::class,'logout'])->name('logout');});
-Route::middleware(['auth','account.active'])->group(function(){Route::get('/dashboard',DashboardController::class)->name('dashboard');Route::get('/profile',[ProfileController::class,'show'])->name('profile.show');Route::post('/profile',[ProfileController::class,'update'])->name('profile.update');Route::get('/kyc',[KycController::class,'show'])->name('kyc.show');Route::post('/kyc',[KycController::class,'store'])->name('kyc.store')->middleware('throttle:3,60');Route::get('/trade',[TradeController::class,'index'])->name('trade.index');Route::post('/trade',[TradeController::class,'store'])->name('trade.store')->middleware('throttle:30,1');Route::post('/trade/{symbol}/close',[TradeController::class,'close'])->name('trade.close')->middleware('throttle:20,1');Route::get('/investments',[InvestmentController::class,'index'])->name('investments.index');Route::post('/investments',[InvestmentController::class,'store'])->name('investments.store')->middleware('throttle:20,1');Route::get('/assistant',[AssistantController::class,'index'])->name('assistant.index');Route::get('/assistant/messages',[AssistantController::class,'messages'])->name('assistant.messages');Route::post('/assistant',[AssistantController::class,'store'])->name('assistant.store')->middleware('throttle:20,1');Route::get('/funding',[FundingController::class,'index'])->name('funding.index');Route::post('/funding',[FundingController::class,'store'])->name('funding.store')->middleware('throttle:10,1');Route::post('/funding/{funding}/transaction',[FundingController::class,'submitTransaction'])->name('funding.transaction')->middleware('throttle:10,1');});
-Route::middleware(['auth','admin'])->prefix('admin')->name('admin.')->group(function(){Route::get('/',[AdminController::class,'index'])->name('dashboard');Route::get('/conversations/{conversation}',[AdminController::class,'conversation'])->name('conversations.show');Route::post('/conversations/{conversation}',[AdminController::class,'reply'])->name('conversations.reply');Route::get('/compliance',[AdminComplianceController::class,'index'])->name('compliance');Route::post('/users/{user}/compliance',[AdminComplianceController::class,'user'])->name('users.compliance');Route::post('/users/{user}/lock',[AdminComplianceController::class,'lock'])->name('users.lock');Route::post('/users/{user}/unlock',[AdminComplianceController::class,'unlock'])->name('users.unlock');Route::post('/funding/{funding}/instructions',[AdminComplianceController::class,'instructions'])->name('funding.instructions');Route::post('/funding/{funding}/approve',[AdminComplianceController::class,'approve'])->name('funding.approve');Route::post('/funding/{funding}/reject',[AdminComplianceController::class,'reject'])->name('funding.reject');Route::post('/packages/{package}',[AdminComplianceController::class,'package'])->name('packages.update');Route::post('/wire-settings',[AdminComplianceController::class,'wire'])->name('wire.update');});
+
+Route::view('/', 'welcome')->name('home');
+Route::get('/news', NewsController::class)->name('news');
+Route::view('/about', 'pages.content', ['page' => 'about'])->name('about');
+Route::view('/contact', 'pages.content', ['page' => 'contact'])->name('contact');
+Route::view('/help', 'pages.content', ['page' => 'help'])->name('help');
+Route::view('/fees', 'pages.content', ['page' => 'fees'])->name('fees');
+Route::view('/terms', 'pages.content', ['page' => 'terms'])->name('terms');
+Route::view('/privacy', 'pages.content', ['page' => 'privacy'])->name('privacy');
+Route::view('/legal', 'pages.content', ['page' => 'legal'])->name('legal');
+Route::view('/risk-disclosure', 'pages.content', ['page' => 'risk'])->name('risk');
+Route::view('/aml-policy', 'pages.content', ['page' => 'aml'])->name('aml');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'login'])->name('login');
+    Route::post('/login', [AuthController::class, 'authenticate'])->middleware('throttle:10,1');
+    Route::get('/register', [AuthController::class, 'register'])->name('register');
+    Route::post('/register', [AuthController::class, 'store'])->middleware('throttle:5,1');
+    Route::get('/verify-otp', [AuthController::class, 'otp'])->name('auth.otp');
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('auth.otp.verify')->middleware('throttle:10,1');
+    Route::post('/verify-otp/resend', [AuthController::class, 'resendOtp'])->name('auth.otp.resend')->middleware('throttle:3,10');
+});
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
+Route::middleware(['auth', 'account.active'])->group(function () {
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/kyc', [KycController::class, 'show'])->name('kyc.show');
+    Route::post('/kyc', [KycController::class, 'store'])->name('kyc.store')->middleware('throttle:3,60');
+    Route::get('/trade', [TradeController::class, 'index'])->name('trade.index');
+    Route::post('/trade', [TradeController::class, 'store'])->name('trade.store')->middleware('throttle:30,1');
+    Route::post('/trade/{symbol}/close', [TradeController::class, 'close'])->name('trade.close')->middleware('throttle:20,1');
+    Route::get('/investments', [InvestmentController::class, 'index'])->name('investments.index');
+    Route::post('/investments', [InvestmentController::class, 'store'])->name('investments.store')->middleware('throttle:10,1');
+    Route::get('/investments/verify-otp', [InvestmentController::class, 'otp'])->name('investments.otp');
+    Route::post('/investments/verify-otp', [InvestmentController::class, 'verifyOtp'])->name('investments.otp.verify')->middleware('throttle:10,1');
+    Route::get('/assistant', [AssistantController::class, 'index'])->name('assistant.index');
+    Route::get('/assistant/messages', [AssistantController::class, 'messages'])->name('assistant.messages');
+    Route::post('/assistant', [AssistantController::class, 'store'])->name('assistant.store')->middleware('throttle:20,1');
+    Route::get('/funding', [FundingController::class, 'index'])->name('funding.index');
+    Route::post('/funding', [FundingController::class, 'store'])->name('funding.store')->middleware('throttle:10,1');
+    Route::post('/funding/{funding}/transaction', [FundingController::class, 'submitTransaction'])->name('funding.transaction')->middleware('throttle:10,1');
+});
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+    Route::get('/conversations/{conversation}', [AdminController::class, 'conversation'])->name('conversations.show');
+    Route::post('/conversations/{conversation}', [AdminController::class, 'reply'])->name('conversations.reply');
+    Route::get('/compliance', [AdminComplianceController::class, 'index'])->name('compliance');
+    Route::post('/users/{user}/compliance', [AdminComplianceController::class, 'user'])->name('users.compliance');
+    Route::post('/users/{user}/lock', [AdminComplianceController::class, 'lock'])->name('users.lock');
+    Route::post('/users/{user}/unlock', [AdminComplianceController::class, 'unlock'])->name('users.unlock');
+    Route::post('/funding/{funding}/instructions', [AdminComplianceController::class, 'instructions'])->name('funding.instructions');
+    Route::post('/funding/{funding}/approve', [AdminComplianceController::class, 'approve'])->name('funding.approve');
+    Route::post('/funding/{funding}/reject', [AdminComplianceController::class, 'reject'])->name('funding.reject');
+    Route::post('/packages/{package}',[AdminComplianceController::class, 'package'])->name('packages.update');
+    Route::post('/wire-settings',[AdminComplianceController::class, 'wire'])->name('wire.update');
+});
