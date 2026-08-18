@@ -1,0 +1,5 @@
+@extends('layouts.app')
+@section('title','Market news — Tesla Markets')
+@section('content')
+<section class="news-hero"><div><span class="eyebrow">EXTERNAL MARKET INTELLIGENCE</span><h1>News moving<br>the markets.</h1><p>Current finance headlines supplied by CNBC and refreshed automatically every 15 minutes.</p></div><div class="news-live"><i></i><span>AUTOMATIC FEED</span><b>{{ count($articles) }} stories</b></div></section><section class="news-disclosure">Headlines and summaries belong to their publisher. Links open the original article. Tesla Markets does not edit or endorse external reporting.</section><section class="news-grid">@foreach($articles as $article)<article class="news-card glass"><div><span>{{ $article['source'] }}</span>@if($article['published'])<time datetime="{{ $article['published'] }}">{{ \Carbon\Carbon::parse($article['published'])->diffForHumans() }}</time>@endif</div><h2>{{ $article['title'] }}</h2><p>{{ $article['summary'] }}</p><a href="{{ $article['url'] }}" target="_blank" rel="noopener noreferrer">Read at {{ $article['source'] }} ↗</a></article>@endforeach</section>
+@endsection

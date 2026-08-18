@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#050505" />
+  <title>Tesla Markets — Precision Trading</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambient"></div>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand tesla-wordmark" href="#" data-view="trade" aria-label="Tesla Markets home">TESLA</a>
+      <nav class="main-nav" aria-label="Primary navigation">
+        <button class="nav-link active" data-view="trade">Trade</button>
+        <button class="nav-link" data-view="markets">Markets</button>
+        <button class="nav-link" data-view="portfolio">Portfolio</button>
+        <button class="nav-link" data-view="news">News</button>
+      </nav>
+      <div class="top-actions">
+        <span class="market-status"><i></i><span>Market open</span></span>
+        <button class="icon-btn theme-toggle" aria-label="Switch color theme"><span class="theme-icon">☼</span></button>
+        <button class="icon-btn search-toggle" aria-label="Search stocks">⌕</button>
+        <button class="icon-btn" aria-label="Notifications">♢<b class="notification-dot"></b></button>
+        <button class="avatar" aria-label="Profile">AK</button>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <aside class="trade-panel glass">
+        <div class="panel-head">
+          <div class="ticker-logo" id="tickerLogo">T</div>
+          <div><div class="eyebrow" id="companyName">Tesla, Inc.</div><h1 id="tickerName">TSLA</h1></div>
+          <button class="star active" aria-label="Toggle watchlist">★</button>
+        </div>
+
+        <div class="quote-block">
+          <div class="quote-row"><strong id="mainPrice">$445.91</strong><span class="live-badge" id="dataMode">LIVE</span></div>
+          <div class="quote-change positive" id="mainChange">+$6.24 <span>(+1.42%)</span> today</div>
+          <div class="updated" id="updatedAt">Updating quote…</div>
+        </div>
+
+        <div class="metrics">
+          <div><span>Open</span><b id="openValue">$439.90</b></div>
+          <div><span>Day high</span><b id="highValue">$448.41</b></div>
+          <div><span>Volume</span><b id="volumeValue">72.8M</b></div>
+        </div>
+
+        <div class="order-tabs" role="tablist">
+          <button class="active" data-side="Buy">Buy</button><button data-side="Sell">Sell</button>
+        </div>
+        <form class="order-form" id="orderForm">
+          <label>Order type<select><option>Market order</option><option>Limit order</option><option>Stop order</option></select></label>
+          <label>Shares<span class="input-wrap"><input id="shares" type="number" value="5" min="0" step="0.1"><em id="estimate">≈ $2,229.55</em></span></label>
+          <div class="buying-power"><span>Buying power</span><b>$28,420.18</b></div>
+          <button class="review-btn" type="submit"><span id="reviewText">Review TSLA buy</span><span>↗</span></button>
+        </form>
+
+        <div class="watchlist-head"><h2>Watchlist</h2><span id="watchCount">5 assets</span></div>
+        <div class="watchlist" id="watchlist"></div>
+      </aside>
+
+      <section class="stage">
+        <img class="hero-car" src="assets/tesla-market-hero.png" alt="White electric vehicle in a dark futuristic market showroom">
+        <div class="stage-shade"></div>
+        <div class="headline">
+          <span class="eyebrow">MARKET SPOTLIGHT · NASDAQ</span>
+          <h2>Own the<br><em>moment.</em></h2>
+          <p>Precision tools for high-conviction moves.</p>
+        </div>
+
+        <div class="chart-card glass">
+          <div class="chart-head">
+            <div><span id="chartTicker">TSLA performance</span><b id="chartReturn">+1.42%</b></div>
+            <div class="range-tabs"><button class="active" data-range="1D">1D</button><button data-range="1W">1W</button><button data-range="1M">1M</button><button data-range="1Y">1Y</button></div>
+          </div>
+          <div class="chart-wrap">
+            <svg viewBox="0 0 800 220" preserveAspectRatio="none" aria-label="Price chart">
+              <defs><linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ef3f42" stop-opacity=".28"/><stop offset="1" stop-color="#ef3f42" stop-opacity="0"/></linearGradient></defs>
+              <g class="grid"><line x1="0" y1="35" x2="800" y2="35"/><line x1="0" y1="100" x2="800" y2="100"/><line x1="0" y1="165" x2="800" y2="165"/></g>
+              <path id="areaPath" class="area" d=""></path><path id="linePath" class="line" d=""></path>
+              <circle id="chartDot" r="5"></circle>
+            </svg>
+            <div class="chart-tooltip" id="chartTooltip"></div>
+          </div>
+        </div>
+
+        <div class="bottom-bar glass">
+          <div><span>S&amp;P 500</span><b>5,932.71</b><em>+0.41%</em></div>
+          <div><span>NASDAQ</span><b>19,218.17</b><em>+0.67%</em></div>
+          <div><span>DOW</span><b>42,635.20</b><em>+0.26%</em></div>
+          <div class="clock"><span>NEW YORK</span><b id="nyClock">09:42:18</b></div>
+        </div>
+
+        <div class="page-view" id="marketsView">
+          <div class="page-title"><div><span class="eyebrow">GLOBAL MARKETS</span><h2>Market pulse</h2></div><span class="page-date" id="marketDate"></span></div>
+          <div class="page-grid markets-grid">
+            <article class="feature-card glass"><span class="eyebrow">TOP MOVER</span><h3>TSLA</h3><strong>+1.42%</strong><p>Momentum builds as volume accelerates above the 20-day average.</p><div class="signal-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></article>
+            <article class="data-card glass"><span>S&amp;P 500</span><b>5,932.71</b><em>+0.41%</em></article>
+            <article class="data-card glass"><span>NASDAQ</span><b>19,218.17</b><em>+0.67%</em></article>
+            <article class="data-card glass"><span>BITCOIN</span><b>$116,284</b><em>+2.18%</em></article>
+            <article class="data-card glass negative-card"><span>VIX</span><b>15.42</b><em>-3.08%</em></article>
+          </div>
+          <div class="ticker-tape"><div>TSLA <b>445.91</b> <em>+1.42%</em> · NVDA <b>182.12</b> <em>+0.87%</em> · AAPL <b>226.94</b> <i>-0.31%</i> · MSFT <b>527.75</b> <em>+0.54%</em> · AMZN <b>222.69</b> <i>-0.18%</i> ·</div></div>
+        </div>
+
+        <div class="page-view" id="portfolioView">
+          <div class="page-title"><div><span class="eyebrow">YOUR PORTFOLIO</span><h2>$128,420.18</h2><p class="positive">+$14,820.04 all time</p></div><button class="outline-btn">Deposit funds</button></div>
+          <div class="portfolio-layout">
+            <div class="allocation glass"><div class="donut"><span><b>48%</b>TSLA</span></div><div class="legend"><h3>Allocation</h3><p><i class="red"></i>TSLA <b>$61,641</b></p><p><i class="blue"></i>Technology <b>$42,820</b></p><p><i class="gray"></i>Cash <b>$23,959</b></p></div></div>
+            <div class="holdings glass"><h3>Positions</h3><div><span>TSLA</span><b>138.24 shares</b><em>+18.7%</em></div><div><span>NVDA</span><b>124.80 shares</b><em>+9.2%</em></div><div><span>MSFT</span><b>38.10 shares</b><em>+4.8%</em></div></div>
+          </div>
+        </div>
+
+        <div class="page-view" id="newsView">
+          <div class="page-title"><div><span class="eyebrow">CURATED FOR YOU</span><h2>Market intelligence</h2></div></div>
+          <div class="news-list">
+            <article class="news-card glass"><span>TESLA · 8 MIN AGO</span><h3>EV momentum returns as investors focus on the next growth cycle</h3><p>Market participants are watching delivery trends and energy storage expansion.</p><button>Read briefing ↗</button></article>
+            <article class="news-card glass"><span>MARKETS · 24 MIN AGO</span><h3>Technology shares lead a measured rise in U.S. futures</h3><p>Semiconductors and automation names move higher before the opening bell.</p><button>Read briefing ↗</button></article>
+            <article class="news-card glass"><span>ANALYSIS · 1 HR AGO</span><h3>Five signals traders are watching this week</h3><p>Volatility, yields, and earnings revisions set the tone for risk assets.</p><button>Read briefing ↗</button></article>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>

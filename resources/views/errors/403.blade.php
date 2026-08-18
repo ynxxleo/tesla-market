@@ -1,0 +1,1 @@
+@include('errors.base',['code'=>403,'title'=>'Access isn’t available.','description'=>'This area requires different account permissions. Return to your dashboard or contact support if you believe this is unexpected.'])

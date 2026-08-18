@@ -1,0 +1,1 @@
+@include('errors.base',['code'=>422,'title'=>'Review your request.','description'=>$exception->getMessage() ?: 'Some information could not be processed. Return to the form and review the highlighted fields.'])

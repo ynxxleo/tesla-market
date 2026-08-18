@@ -1,0 +1,1 @@
+@include('errors.base',['code'=>503,'title'=>'Temporarily unavailable.','description'=>'This service is undergoing maintenance or has not been configured for this environment. Please try again shortly.'])

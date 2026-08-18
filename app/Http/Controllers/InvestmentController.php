@@ -1,0 +1,12 @@
+<?php
+namespace App\Http\Controllers;
+use App\Models\{Investment,InvestmentPackage,User};
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+class InvestmentController extends Controller {
+ public function index(Request $r){$investments=$r->user()->investments()->latest()->get();$models=InvestmentPackage::catalog();$packages=$models->mapWithKeys(fn($p)=>[$p->slug=>['name'=>$p->name,'min'=>(float)$p->minimum,'max'=>(float)$p->maximum,'rate'=>(float)$p->annual_rate,'image'=>$p->image,'image_light'=>$p->image_light]]);$total=(float)$investments->where('status','active')->sum('balance');return view('investments.index',compact('investments','packages')+['eligibility'=>$this->eligibility($total,$models)]);}
+ public function store(Request $r){$package=InvestmentPackage::catalog()->firstWhere('slug',$r->input('plan'));if(!$package)throw ValidationException::withMessages(['plan'=>'Select an available package.']);$data=$r->validate(['plan'=>'required|string','amount'=>'required|numeric']);$amount=(float)$data['amount'];if($amount<(float)$package->minimum||$amount>(float)$package->maximum)throw ValidationException::withMessages(['amount'=>"The {$package->name} package accepts $".number_format((float)$package->minimum).'–$'.number_format((float)$package->maximum).'.']);DB::transaction(function()use($r,$data,$amount,$package){$user=User::lockForUpdate()->findOrFail($r->user()->id);if((float)$user->cash_balance<$amount)throw ValidationException::withMessages(['amount'=>'Your available BALANCE is $'.number_format($user->cash_balance,2).'. Deposit more platform funds or choose a lower amount.']);$user->decrement('cash_balance',$amount);Investment::create(['user_id'=>$user->id,'plan'=>$data['plan'],'principal'=>$amount,'balance'=>$amount,'annual_rate'=>$package->annual_rate,'started_at'=>now(),'last_accrued_at'=>now()]);});return back()->with('status',"{$package->name} package added to your portfolio.");}
+ private function eligibility(float $total,$packages):array{$levels=$packages->map(fn($p)=>['name'=>$p->name,'amount'=>(float)$p->minimum])->values()->all();$current='Explorer';$next=$levels[0]??null;foreach($levels as $i=>$level){if($total>=$level['amount']){$current=$level['name'];$next=$levels[$i+1]??null;}}$progress=$next?min(100,($total/$next['amount'])*100):100;return compact('total','current','next','progress');}
+}

@@ -1,0 +1,1 @@
+@include('errors.base',['code'=>500,'title'=>'We hit an unexpected issue.','description'=>'The request could not be completed. Your information has not been intentionally changed. Please return and try once more.'])
