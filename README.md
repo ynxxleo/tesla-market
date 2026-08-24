@@ -35,6 +35,39 @@ Development uses Laravel’s `log` mailer. For real escalation email, configure 
 php artisan schedule:work
 ```
 
+Password resets, signup verification, login verification, and investment verification all require working outbound email.
+
+## cPanel deployment
+
+Point the domain's document root at this repository's `public` directory. Keep `.env`, `vendor`, `storage`, and the rest of the Laravel application outside a publicly served directory whenever the host allows it. In the production `.env`, set the real HTTPS URL and SMTP mailbox supplied by the host:
+
+```dotenv
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://your-domain.example
+
+MAIL_MAILER=smtp
+MAIL_HOST=mail.your-domain.example
+MAIL_PORT=465
+MAIL_USERNAME=no-reply@your-domain.example
+MAIL_PASSWORD=your-mailbox-password
+MAIL_ENCRYPTION=ssl
+MAIL_FROM_ADDRESS=no-reply@your-domain.example
+MAIL_FROM_NAME="Tesla Markets"
+
+SESSION_DRIVER=database
+SESSION_SECURE_COOKIE=true
+SESSION_DOMAIN=your-domain.example
+```
+
+Do not copy a local `APP_KEY` onto a production application that already contains encrypted wallet records. On first deployment, run `php artisan db:seed --force` once after setting unique `ADMIN_EMAIL` and `ADMIN_PASSWORD`. For each deployment, run:
+
+```bash
+bash deploy/cpanel-deploy.sh
+```
+
+If cPanel hosts the application in a subdirectory, include that subdirectory in `APP_URL` and `SESSION_PATH`. After changing `.env`, run `php artisan optimize:clear` followed by `php artisan config:cache`. A `MAIL_MAILER=log` production setting will write verification codes and reset links to `storage/logs/laravel.log` instead of delivering them.
+
 The `investments:accrue` command compounds disclosed simulation rates once daily. These values are modeled scenarios, not actual or promised profit.
 
 ## Production checklist

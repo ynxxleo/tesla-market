@@ -6,11 +6,14 @@ use App\Mail\OtpMail;
 use App\Mail\WelcomeMail;
 use App\Models\FundingRequest;
 use App\Models\InvestmentPackage;
+use App\Models\SystemSetting;
 use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -51,6 +54,30 @@ class TradingFlowTest extends TestCase
         });
         $this->post('/verify-otp', ['code' => $otp])->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_user_can_reset_a_forgotten_password(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create(['password' => 'old-password']);
+
+        $this->post('/forgot-password', ['email' => $user->email])->assertSessionHas('status');
+
+        $token = null;
+        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use (&$token) {
+            $token = $notification->token;
+
+            return true;
+        });
+
+        $this->post('/reset-password', [
+            'token' => $token,
+            'email' => $user->email,
+            'password' => 'new-password-2026',
+            'password_confirmation' => 'new-password-2026',
+        ])->assertRedirect('/login')->assertSessionHas('status');
+
+        $this->assertTrue(password_verify('new-password-2026', $user->fresh()->password));
     }
 
     public function test_user_can_make_paper_trade(): void
@@ -213,7 +240,8 @@ class TradingFlowTest extends TestCase
 
     public function test_verified_user_can_request_wire_deposit_and_admin_can_confirm_it(): void
     {
-        $user = User::factory()->create(['kyc_status' => 'verified', 'sanctions_status' => 'clear', 'cash_balance' => 0]);
+        $user = User::factory()->create(['kyc_status' => 'verified', 'sanctions_status' => 'clear']);
+        $this->assertEquals(0, (float) $user->cash_balance);
         $this->actingAs($user)->post('/funding', ['type' => 'deposit', 'method' => 'wire', 'usd_amount' => 250])->assertSessionHas('status');
         $funding = FundingRequest::where('user_id', $user->id)->firstOrFail();
         $this->assertSame('wire', $funding->method);
@@ -222,6 +250,14 @@ class TradingFlowTest extends TestCase
         $this->actingAs($admin)->post("/admin/funding/{$funding->id}/approve", ['review_note' => 'Wire reference confirmed'])->assertSessionHas('status');
         $this->assertSame('approved', $funding->fresh()->status);
         $this->assertEquals(250, (float) $user->fresh()->cash_balance);
+        $this->assertDatabaseHas('ledger_entries', [
+            'user_id' => $user->id,
+            'funding_request_id' => $funding->id,
+            'direction' => 'credit',
+            'amount' => 250,
+            'balance_after' => 250,
+            'event' => 'deposit_settled',
+        ]);
     }
 
     public function test_admin_can_edit_package_amount_and_profit_rate(): void
@@ -236,5 +272,16 @@ class TradingFlowTest extends TestCase
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $this->actingAs($admin)->get('/admin/compliance')->assertOk()->assertSee('Company wire instructions')->assertSee('Cybertruck');
+    }
+
+    public function test_admin_can_update_crypto_deposit_wallets(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $wallets = SystemSetting::cryptoWallets()->value;
+        $wallets['BTC']['address'] = 'bc1q-new-admin-managed-address';
+
+        $this->actingAs($admin)->post('/admin/crypto-wallets', ['wallets' => $wallets])->assertSessionHas('status');
+
+        $this->assertSame('bc1q-new-admin-managed-address', SystemSetting::cryptoWallets()->fresh()->value['BTC']['address']);
     }
 }

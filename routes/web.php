@@ -10,6 +10,7 @@ use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\KycController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\TradeController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,10 @@ Route::view('/aml-policy', 'pages.content', ['page' => 'aml'])->name('aml');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'login'])->name('login');
     Route::post('/login', [AuthController::class, 'authenticate'])->middleware('throttle:10,1');
+    Route::get('/forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'email'])->name('password.email')->middleware('throttle:3,1');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'reset'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update')->middleware('throttle:5,1');
     Route::get('/register', [AuthController::class, 'register'])->name('register');
     Route::post('/register', [AuthController::class, 'store'])->middleware('throttle:5,1');
     Route::get('/verify-otp', [AuthController::class, 'otp'])->name('auth.otp');
@@ -69,4 +74,5 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/funding/{funding}/reject', [AdminComplianceController::class, 'reject'])->name('funding.reject');
     Route::post('/packages/{package}',[AdminComplianceController::class, 'package'])->name('packages.update');
     Route::post('/wire-settings',[AdminComplianceController::class, 'wire'])->name('wire.update');
+    Route::post('/crypto-wallets',[AdminComplianceController::class, 'wallets'])->name('wallets.update');
 });

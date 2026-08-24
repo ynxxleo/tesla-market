@@ -27,5 +27,6 @@ class DatabaseSeeder extends Seeder
         ], ['status' => 'planning', 'live_operations_allowed' => false]);
         \App\Models\InvestmentPackage::catalog();
         \App\Models\SystemSetting::wire();
+        \App\Models\SystemSetting::cryptoWallets();
     }
 }
