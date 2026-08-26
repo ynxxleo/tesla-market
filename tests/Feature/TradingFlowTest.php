@@ -12,6 +12,7 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -20,6 +21,15 @@ use Tests\TestCase;
 class TradingFlowTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_database_seeder_synchronizes_configured_admin_credentials(): void
+    {
+        $this->seed();
+
+        $admin = User::where('email', config('admin.email'))->firstOrFail();
+        $this->assertTrue($admin->is_admin);
+        $this->assertTrue(Hash::check(config('admin.password'), $admin->password));
+    }
 
     public function test_signup_requires_emailed_otp_and_sends_welcome_email(): void
     {
@@ -54,6 +64,20 @@ class TradingFlowTest extends TestCase
         });
         $this->post('/verify-otp', ['code' => $otp])->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_admin_login_does_not_require_email_otp(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['is_admin' => true, 'password' => 'password123']);
+
+        $this->post('/login', [
+            'email' => $admin->email,
+            'password' => 'password123',
+        ])->assertRedirect('/admin');
+
+        $this->assertAuthenticatedAs($admin);
+        Mail::assertNotSent(OtpMail::class);
     }
 
     public function test_user_can_reset_a_forgotten_password(): void

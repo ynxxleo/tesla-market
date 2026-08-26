@@ -15,9 +15,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(['email' => env('ADMIN_EMAIL', 'admin@teslamarkets.test')], [
-            'name' => env('ADMIN_NAME', 'Platform Administrator'),
-            'password' => env('ADMIN_PASSWORD', 'ChangeMe!2026'),
+        User::updateOrCreate(['email' => config('admin.email')], [
+            'name' => config('admin.name'),
+            'password' => config('admin.password'),
             'is_admin' => true,
             'cash_balance' => 0,
         ]);

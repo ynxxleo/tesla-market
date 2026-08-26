@@ -16,7 +16,7 @@ return new class extends Migration
         // Remove the legacy demo balance only from accounts that have never
         // funded, traded, or invested. This preserves balances users earned
         // through approved deposit testing or other activity.
-        DB::table('users')
+        $legacyUserIds = DB::table('users')
             ->where('cash_balance', 100000)
             ->whereNotExists(fn ($query) => $query
                 ->selectRaw('1')
@@ -30,7 +30,9 @@ return new class extends Migration
                 ->selectRaw('1')
                 ->from('investments')
                 ->whereColumn('investments.user_id', 'users.id'))
-            ->update(['cash_balance' => 0]);
+            ->pluck('id');
+
+        DB::table('users')->whereIn('id', $legacyUserIds)->update(['cash_balance' => 0]);
     }
 
     public function down(): void

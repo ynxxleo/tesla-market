@@ -26,6 +26,11 @@ class AuthController extends Controller
         if ($user->isLocked()) {
             return back()->withErrors(['email' => 'This account is restricted. Contact compliance support.']);
         }$r->session()->regenerate();
+        if ($user->is_admin) {
+            Auth::login($user, $r->boolean('remember'));
+
+            return redirect()->intended(route('admin.dashboard'));
+        }
         $code = $otp->issue($r, 'login', $user->id, ['remember' => $r->boolean('remember')]);
         Mail::to($user)->send(new OtpMail($code, 'login'));
 

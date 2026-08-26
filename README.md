@@ -60,7 +60,7 @@ SESSION_SECURE_COOKIE=true
 SESSION_DOMAIN=your-domain.example
 ```
 
-Do not copy a local `APP_KEY` onto a production application that already contains encrypted wallet records. On first deployment, run `php artisan db:seed --force` once after setting unique `ADMIN_EMAIL` and `ADMIN_PASSWORD`. For each deployment, run:
+Do not copy a local `APP_KEY` onto a production application that already contains encrypted wallet records. Set unique `ADMIN_EMAIL` and `ADMIN_PASSWORD` values before deploying. The deployment script synchronizes that administrator account on every deployment, so changing `ADMIN_PASSWORD` in `.env` and deploying is also the supported way to recover cPanel administrator access. For each deployment, run:
 
 ```bash
 bash deploy/cpanel-deploy.sh
