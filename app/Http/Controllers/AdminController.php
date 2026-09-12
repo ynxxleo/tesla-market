@@ -1,9 +1,14 @@
 <?php
 namespace App\Http\Controllers;
-use App\Models\{Conversation,Investment,User};
+use App\Models\{Conversation,Investment,LedgerEntry,User};
+use App\Services\AuditService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 class AdminController extends Controller {
- public function index(){return view('admin.dashboard',['users'=>User::where('is_admin',false)->latest()->limit(8)->get(),'conversations'=>Conversation::with('user')->latest()->limit(12)->get(),'invested'=>Investment::where('status','active')->sum('balance')]);}
+ public function index(){ $users=User::where('is_admin',false)->latest()->limit(50)->get(); $onlineIds=DB::table('sessions')->whereNotNull('user_id')->where('last_activity','>=',now()->subMinutes(config('session.lifetime'))->timestamp)->pluck('user_id')->all(); return view('admin.dashboard',['users'=>$users,'onlineIds'=>$onlineIds,'conversations'=>Conversation::with('user')->latest()->limit(12)->get(),'invested'=>Investment::where('status','active')->sum('balance')]);}
+ public function users(){ $users=User::where('is_admin',false)->latest()->get(); $onlineIds=DB::table('sessions')->whereNotNull('user_id')->where('last_activity','>=',now()->subMinutes(config('session.lifetime'))->timestamp)->pluck('user_id')->all(); return view('admin.users',compact('users','onlineIds')); }
+ public function adjustBalance(Request $r, User $user, AuditService $audit){ $data=$r->validate(['operation'=>'required|in:add,reduce','amount'=>'required|numeric|min:0.01|max:100000000','note'=>'nullable|string|max:255']); DB::transaction(function() use($data,$user,$audit,$r){ $locked=User::lockForUpdate()->findOrFail($user->id); $amount=round((float)$data['amount'],2); $before=(float)$locked->cash_balance; if($data['operation']==='reduce' && $before<$amount) abort(422,'The user balance cannot be reduced below zero.'); $after=$data['operation']==='add'?$before+$amount:$before-$amount; $locked->update(['cash_balance'=>$after]); LedgerEntry::create(['user_id'=>$locked->id,'direction'=>$data['operation']==='add'?'credit':'debit','amount'=>$amount,'balance_after'=>$after,'event'=>'admin_balance_adjustment','idempotency_key'=>'admin:balance:'.bin2hex(random_bytes(16))]); $audit->record('admin.balance_adjusted',$locked,['cash_balance'=>$before],['cash_balance'=>$after,'operation'=>$data['operation'],'amount'=>$amount,'note'=>$data['note']??null],$r); }); return back()->with('status','User balance updated and audited.'); }
+ public function destroy(Request $r, User $user){ abort_if($user->is_admin || $user->id===$r->user()->id,403,'Administrators cannot be deleted here.'); $user->delete(); return back()->with('status','User deleted.'); }
  public function conversation(Conversation $conversation){return view('admin.conversation',['conversation'=>$conversation->load('messages.user','user')]);}
  public function reply(Request $r,Conversation $conversation){$data=$r->validate(['message'=>'required|string|max:3000']);$conversation->messages()->create(['user_id'=>$r->user()->id,'author_type'=>'human_admin','body'=>$data['message']]);$conversation->update(['status'=>'admin_joined','assigned_admin_id'=>$r->user()->id]);return back()->with('status','Human-admin reply sent and labeled.');}
 }

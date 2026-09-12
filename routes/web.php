@@ -63,12 +63,15 @@ Route::middleware(['auth', 'account.active'])->group(function () {
 });
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+    Route::get('/users', [AdminController::class, 'users'])->name('users');
     Route::get('/conversations/{conversation}', [AdminController::class, 'conversation'])->name('conversations.show');
     Route::post('/conversations/{conversation}', [AdminController::class, 'reply'])->name('conversations.reply');
     Route::get('/compliance', [AdminComplianceController::class, 'index'])->name('compliance');
     Route::post('/users/{user}/compliance', [AdminComplianceController::class, 'user'])->name('users.compliance');
     Route::post('/users/{user}/lock', [AdminComplianceController::class, 'lock'])->name('users.lock');
     Route::post('/users/{user}/unlock', [AdminComplianceController::class, 'unlock'])->name('users.unlock');
+    Route::delete('/users/{user}', [AdminController::class, 'destroy'])->name('users.destroy');
+    Route::post('/users/{user}/balance', [AdminController::class, 'adjustBalance'])->name('users.balance');
     Route::post('/funding/{funding}/instructions', [AdminComplianceController::class, 'instructions'])->name('funding.instructions');
     Route::post('/funding/{funding}/approve', [AdminComplianceController::class, 'approve'])->name('funding.approve');
     Route::post('/funding/{funding}/reject', [AdminComplianceController::class, 'reject'])->name('funding.reject');

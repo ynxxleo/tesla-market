@@ -308,4 +308,20 @@ class TradingFlowTest extends TestCase
 
         $this->assertSame('bc1q-new-admin-managed-address', SystemSetting::cryptoWallets()->fresh()->value['BTC']['address']);
     }
+    public function test_admin_can_adjust_balance_and_view_users_page(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $user = User::factory()->create(['cash_balance' => 100]);
+        $this->actingAs($admin)->post("/admin/users/{$user->id}/balance", ['operation' => 'add', 'amount' => 25])->assertSessionHas('status');
+        $this->assertEquals(125, (float) $user->fresh()->cash_balance);
+        $this->actingAs($admin)->get('/admin/users')->assertOk()->assertSee($user->email);
+    }
+
+    public function test_admin_can_delete_non_admin_user(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $user = User::factory()->create();
+        $this->actingAs($admin)->delete("/admin/users/{$user->id}")->assertSessionHas('status');
+        $this->assertNull(User::find($user->id));
+    }
 }
