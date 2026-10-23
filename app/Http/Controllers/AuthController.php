@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\OtpMail;
 use App\Mail\WelcomeMail;
 use App\Models\User;
 use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class AuthController extends Controller
 {
@@ -31,8 +32,7 @@ class AuthController extends Controller
 
             return redirect()->intended(route('admin.dashboard'));
         }
-        $code = $otp->issue($r, 'login', $user->id, ['remember' => $r->boolean('remember')]);
-        Mail::to($user)->send(new OtpMail($code, 'login'));
+        $otp->send($r, 'login', $user, ['remember' => $r->boolean('remember')]);
 
         return redirect()->route('auth.otp');
     }
@@ -45,10 +45,11 @@ class AuthController extends Controller
     public function store(Request $r, OtpService $otp)
     {
         $data = $r->validate(['name' => 'required|string|max:80', 'email' => 'required|email|unique:users', 'password' => 'required|min:8|confirmed']);
-        $user = User::create($data);
         $r->session()->regenerate();
-        $code = $otp->issue($r, 'signup', $user->id);
-        Mail::to($user)->send(new OtpMail($code, 'signup'));
+        DB::transaction(function () use ($r, $otp, $data) {
+            $user = User::create($data);
+            $otp->send($r, 'signup', $user);
+        });
 
         return redirect()->route('auth.otp');
     }
@@ -63,7 +64,7 @@ class AuthController extends Controller
             return redirect()->route('login');
         }
 
-return view('auth.otp', ['maskedEmail' => $this->maskEmail($user->email)]);
+        return view('auth.otp', ['maskedEmail' => $this->maskEmail($user->email)]);
     }
 
     public function verifyOtp(Request $r, OtpService $otp)
@@ -78,7 +79,11 @@ return view('auth.otp', ['maskedEmail' => $this->maskEmail($user->email)]);
             return redirect()->route('login')->withErrors(['email' => 'This account is restricted. Contact compliance support.']);
         }if ($purpose === 'signup') {
             $user->forceFill(['email_verified_at' => now()])->save();
-            Mail::to($user)->send(new WelcomeMail($user));
+            try {
+                Mail::to($user)->send(new WelcomeMail($user));
+            } catch (Throwable $exception) {
+                report($exception);
+            }
         }Auth::login($user, (bool) ($challenge['payload']['remember'] ?? false));
         $r->session()->regenerate();
 
@@ -91,8 +96,7 @@ return view('auth.otp', ['maskedEmail' => $this->maskEmail($user->email)]);
         $purpose = $challenge['purpose'] ?? '';
         if (! in_array($purpose, ['login', 'signup'], true) || ! ($user = User::find($challenge['user_id'] ?? null))) {
             return redirect()->route('login');
-        }$code = $otp->issue($r, $purpose, $user->id, $challenge['payload'] ?? []);
-        Mail::to($user)->send(new OtpMail($code, $purpose));
+        }$otp->send($r, $purpose, $user, $challenge['payload'] ?? []);
 
         return back()->with('status', 'A new verification code was sent.');
     }
@@ -110,6 +114,6 @@ return view('auth.otp', ['maskedEmail' => $this->maskEmail($user->email)]);
     {
         [$name,$domain] = explode('@', $email, 2);
 
-        return substr($name, 0, 1).str_repeat('•',max(2,strlen($name) - 1)).'@'.$domain;
+        return substr($name, 0, 1).str_repeat('•', max(2, strlen($name) - 1)).'@'.$domain;
     }
 }

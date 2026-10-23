@@ -2,27 +2,44 @@
 
 namespace App\Services;
 
+use App\Mail\OtpMail;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class OtpService
 {
     private const SESSION_KEY = 'otp_challenge';
 
-    public function issue(Request $request, string $purpose, int $userId, array $payload = []): string
+    public function send(Request $request, string $purpose, User $user, array $payload = []): void
     {
         $code = (string) random_int(100000, 999999);
 
-        $request->session()->put(self::SESSION_KEY, [
+        $challenge = [
             'purpose' => $purpose,
-            'user_id' => $userId,
+            'user_id' => $user->id,
             'code_hash' => Hash::make($code),
             'expires_at' => now()->addMinutes(10)->timestamp,
             'attempts' => 0,
             'payload' => $payload,
-        ]);
+        ];
 
-        return $code;
+        try {
+            Mail::to($user)->send(new OtpMail($code, $purpose));
+        } catch (TransportExceptionInterface|InvalidArgumentException $exception) {
+            report($exception);
+
+            throw ValidationException::withMessages([
+                'email' => 'We could not send your verification code. Please try again shortly.',
+            ]);
+        }
+
+        // A failed resend must leave the previously delivered code usable.
+        $request->session()->put(self::SESSION_KEY, $challenge);
     }
 
     public function challenge(Request $request, string $purpose): ?array

@@ -41,6 +41,7 @@ php artisan config:clear
 php artisan route:clear
 php artisan view:clear
 php artisan clear-compiled
+php artisan mail:check
 php artisan migrate --force
 php artisan db:seed --force
 php artisan storage:link || true

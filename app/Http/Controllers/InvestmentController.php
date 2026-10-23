@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\OtpMail;
 use App\Models\Investment;
 use App\Models\InvestmentPackage;
 use App\Models\User;
 use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class InvestmentController extends Controller
@@ -29,8 +27,7 @@ class InvestmentController extends Controller
         [$package,$data,$amount] = $this->validateInvestment($r);
         if ((float) $r->user()->cash_balance < $amount) {
             throw ValidationException::withMessages(['amount' => 'Your available BALANCE is $'.number_format($r->user()->cash_balance, 2).'. Deposit more platform funds or choose a lower amount.']);
-        }$code = $otp->issue($r, 'investment', $r->user()->id, ['plan' => $data['plan'], 'amount' => $amount]);
-        Mail::to($r->user())->send(new OtpMail($code, 'investment'));
+        }$otp->send($r, 'investment', $r->user(), ['plan' => $data['plan'], 'amount' => $amount]);
 
         return redirect()->route('investments.otp');
     }
@@ -42,7 +39,7 @@ class InvestmentController extends Controller
             return redirect()->route('investments.index');
         }
 
-return view('investments.otp', ['maskedEmail' => $this->maskEmail($r->user()->email)]);
+        return view('investments.otp', ['maskedEmail' => $this->maskEmail($r->user()->email)]);
     }
 
     public function verifyOtp(Request $r, OtpService $otp)
@@ -80,7 +77,7 @@ return view('investments.otp', ['maskedEmail' => $this->maskEmail($r->user()->em
             throw ValidationException::withMessages(['amount' => "The {$package->name} package accepts $".number_format((float) $package->minimum).'–$'.number_format((float) $package->maximum).'.']);
         }
 
-return [$package, $data, $amount];
+        return [$package, $data, $amount];
     }
 
     private function maskEmail(string $email): string
@@ -102,6 +99,6 @@ return [$package, $data, $amount];
             }
         }$progress = $next ? min(100, ($total / $next['amount']) * 100) : 100;
 
-        return compact('total','current','next','progress');
+        return compact('total', 'current', 'next', 'progress');
     }
 }

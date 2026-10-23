@@ -51,7 +51,8 @@ MAIL_HOST=mail.your-domain.example
 MAIL_PORT=465
 MAIL_USERNAME=no-reply@your-domain.example
 MAIL_PASSWORD=your-mailbox-password
-MAIL_ENCRYPTION=ssl
+MAIL_SCHEME=smtps
+MAIL_TIMEOUT=10
 MAIL_FROM_ADDRESS=no-reply@your-domain.example
 MAIL_FROM_NAME="Tesla Markets"
 
@@ -67,6 +68,16 @@ bash deploy/cpanel-deploy.sh
 ```
 
 If cPanel hosts the application in a subdirectory, include that subdirectory in `APP_URL` and `SESSION_PATH`. After changing `.env`, run `php artisan optimize:clear` followed by `php artisan config:cache`. A `MAIL_MAILER=log` production setting will write verification codes and reset links to `storage/logs/laravel.log` instead of delivering them.
+
+For SMTP port 587, use `MAIL_SCHEME=smtp`; STARTTLS is negotiated by the mail transport. Port 465 uses `MAIL_SCHEME=smtps`. Legacy `MAIL_ENCRYPTION=ssl` and `MAIL_ENCRYPTION=tls` settings are also supported when `MAIL_SCHEME` is unset.
+
+Deployment checks mail configuration before running migrations. To verify the SMTP connection and authentication on the production host without sending an email, run:
+
+```bash
+php artisan mail:check --connect
+```
+
+If login reports that it could not send a verification code, check `storage/logs/laravel.log` on the production host for the underlying SMTP error and correct the host, port, mailbox credentials, or TLS settings. Failed sends keep the user signed out and allow another attempt; failed resends preserve the previous code.
 
 The `investments:accrue` command compounds disclosed simulation rates once daily. These values are modeled scenarios, not actual or promised profit.
 

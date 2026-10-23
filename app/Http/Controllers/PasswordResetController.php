@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
+use InvalidArgumentException;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class PasswordResetController extends Controller
 {
@@ -20,9 +22,17 @@ class PasswordResetController extends Controller
     public function email(Request $request)
     {
         $request->validate(['email' => ['required', 'email']]);
-        Password::sendResetLink($request->only('email'));
+        try {
+            Password::sendResetLink($request->only('email'));
+        } catch (TransportExceptionInterface|InvalidArgumentException $exception) {
+            report($exception);
 
-        return back()->with('status', 'If an account exists for that email, a password reset link has been sent.');
+            if ($user = User::where('email', $request->input('email'))->first()) {
+                Password::deleteToken($user);
+            }
+        }
+
+        return back()->with('status', 'If an account exists for that email, we will try to send a password reset link. If it does not arrive, try again shortly.');
     }
 
     public function reset(Request $request, string $token)
